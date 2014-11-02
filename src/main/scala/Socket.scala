@@ -4,10 +4,12 @@ import java.net.{
   Socket => JSocket,
   SocketAddress => JSocketAddress
 }
-import java.io.IOException
-import jnr.unixsocket.UnixSocketChannel
+import java.io.{ File, IOException }
+import jnr.unixsocket.{ UnixSocketAddress, UnixSocketChannel }
 
 case class Socket(chan: UnixSocketChannel) extends JSocket(SocketImpl(chan)) {
+  def this(file: File) = this(UnixSocketChannel.open(new UnixSocketAddress(file)))
+
   override def bind(jaddr: JSocketAddress) =
     jaddr match {
       case unix: Addr =>
