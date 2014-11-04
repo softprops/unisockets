@@ -1,13 +1,17 @@
 package unisockets
 
-import java.io.IOException
-import java.net.SocketAddress
+import java.io.{ File, IOException }
+import java.net.{ SocketAddress, SocketOption }
 import java.nio.ByteBuffer
 import java.nio.channels.{ SocketChannel => JSocketChannel, UnsupportedAddressTypeException }
 import java.nio.channels.spi.SelectorProvider
 import jnr.unixsocket.{ UnixSocketAddress, UnixSocketChannel }
+import scala.collection.JavaConverters._
 
-case class SocketChannel(chan: UnixSocketChannel) extends JSocketChannel(SelectorProvider.provider) {
+case class SocketChannel(chan: UnixSocketChannel)
+  extends JSocketChannel(SelectorProvider.provider) {
+
+  def this(file: File) = this(UnixSocketChannel.open(new UnixSocketAddress(file)))
 
   override def connect(addr: SocketAddress): Boolean =
     addr match {
@@ -47,5 +51,30 @@ case class SocketChannel(chan: UnixSocketChannel) extends JSocketChannel(Selecto
   override protected def implConfigureBlocking(blocks: Boolean) {
     // protected
     //chan.implConfigureBlocking(blocks)
+  }
+
+  // java 7+
+
+  def getOption[T](name: SocketOption[T]) = throw new RuntimeException("not supported")
+
+  def setOption[T](name: SocketOption[T], value: T) = this
+
+  def supportedOptions() = Set.empty[SocketOption[_]].asJava
+
+  def getLocalAddress = null // never bound
+
+  def getRemoteAddress =
+    Option(chan.getRemoteSocketAddress).map(Addr(_)).orNull
+
+  def bind(jaddr: SocketAddress) = this
+
+  def shutdownInput() = {
+    chan.shutdownInput
+    this
+  }
+
+  def shutdownOutput() = {
+    chan.shutdownOutput
+    this
   }
 }
