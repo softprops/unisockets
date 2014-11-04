@@ -7,6 +7,8 @@ import java.net.{
 import java.io.{ File, IOException }
 import jnr.unixsocket.{ UnixSocketAddress, UnixSocketChannel }
 
+// http://www.docjar.com/html/api/sun/nio/ch/SocketAdaptor.java.html
+
 case class Socket(chan: UnixSocketChannel) extends JSocket(SocketImpl(chan)) {
   def this(file: File) = this(UnixSocketChannel.open(new UnixSocketAddress(file)))
 
