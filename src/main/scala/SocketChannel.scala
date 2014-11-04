@@ -38,7 +38,7 @@ case class SocketChannel(chan: UnixSocketChannel) extends JSocketChannel(Selecto
   override def write(srcs: Array[ByteBuffer], offset: Int, len: Int) =
     throw new IOException("not supported")
 
-  override def socket() = Socket(chan)
+  override def socket() = Socket(chan, Some(this))
 
   override protected def implCloseSelectableChannel() {
     // protected
