@@ -12,10 +12,9 @@ import jnr.unixsocket.{ Native, UnixSocketAddress, UnixSocketChannel }
 // http://www.docjar.com/html/api/sun/nio/ch/SocketAdaptor.java.html
 import jnr.constants.platform.{ SocketLevel, SocketOption }
 
-
 case class Socket(
   chan: UnixSocketChannel,
-  socketChannel: Option[SocketChannel] = None) extends JSocket {//(SocketImpl(chan)) {
+  socketChannel: Option[SocketChannel] = None) extends JSocket {
 
   def this(file: File) = this(UnixSocketChannel.open(new UnixSocketAddress(file)))
   @volatile private[this] var closed = false
