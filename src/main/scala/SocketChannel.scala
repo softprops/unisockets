@@ -4,7 +4,6 @@ import java.io.{ File, IOException }
 import java.net.{ SocketAddress, SocketOption }
 import java.nio.ByteBuffer
 import java.nio.channels.{ SocketChannel => JSocketChannel, UnsupportedAddressTypeException }
-import java.nio.channels.spi.SelectorProvider
 import jnr.unixsocket.{ UnixSocketAddress, UnixSocketChannel }
 import scala.collection.JavaConverters._
 
