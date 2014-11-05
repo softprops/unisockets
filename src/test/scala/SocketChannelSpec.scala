@@ -4,7 +4,7 @@ import org.scalatest.FunSpec
 import java.io.{ InputStreamReader, File, PrintWriter }
 import java.nio.CharBuffer
 
-class SocketChannelSpec extends FunSpec {
+class SocketChannelTest extends FunSpec {
   describe("SocketChannel") {
     it ("should work") {
       val req = "GET /images/json HTTP/1.1\r\n\r\n"
@@ -21,6 +21,7 @@ class SocketChannelSpec extends FunSpec {
       result.flip()
       println(result.toString)
       socket.close()
+      assert(true)
     }
   }
 }
