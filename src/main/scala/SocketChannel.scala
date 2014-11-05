@@ -9,7 +9,8 @@ import jnr.unixsocket.{ UnixSocketAddress, UnixSocketChannel }
 import scala.collection.JavaConverters._
 
 object SocketChannel {
-  def open(file: File) = this(UnixSocketChannel.open(new UnixSocketAddress(file)))
+  def open(file: File) = SocketChannel(UnixSocketChannel.open(new UnixSocketAddress(file)))
+  def open() = SocketChannel(UnixSocketChannel.open())
 }
 
 case class SocketChannel(chan: UnixSocketChannel)

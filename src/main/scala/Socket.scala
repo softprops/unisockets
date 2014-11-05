@@ -16,6 +16,8 @@ import jnr.constants.platform.{ SocketLevel, SocketOption }
 object Socket {
   def open(file: File): Socket =
     Socket(UnixSocketChannel.open(new UnixSocketAddress(file)))
+  def open(): Socket =
+    Socket(UnixSocketChannel.open())
 }
 
 case class Socket(
