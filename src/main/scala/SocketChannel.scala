@@ -9,12 +9,28 @@ import jnr.unixsocket.{ UnixSocketAddress, UnixSocketChannel }
 import scala.collection.JavaConverters._
 
 object SocketChannel {
-  def open(file: File) = SocketChannel(UnixSocketChannel.open(new UnixSocketAddress(file)))
-  def open() = SocketChannel(UnixSocketChannel.open())
+  def open(file: File) =
+    SocketChannel(UnixSocketChannel.open(new UnixSocketAddress(file)))
+  def open() =
+    SocketChannel(UnixSocketChannel.open())
 }
 
 case class SocketChannel(chan: UnixSocketChannel)
-  extends JSocketChannel(SelectorProvider.provider) {
+  extends JSocketChannel(chan.provider) {
+
+  // AbstractSelectableChannel interface
+
+  protected def implCloseSelectableChannel() {
+    // protected!
+    //chan.implCloseSelectableChannel()
+  }
+
+  protected def implConfigureBlocking(blocks: Boolean) {
+    // protected!
+    //chan.implConfigureBlocking(blocks)
+  }
+
+  // SocketChannel interface
 
   override def connect(addr: SocketAddress): Boolean =
     addr match {
@@ -46,15 +62,6 @@ case class SocketChannel(chan: UnixSocketChannel)
     throw new IOException("not supported")
 
   override def socket() = Socket(chan, Some(this))
-
-  override protected def implCloseSelectableChannel() {
-    // protected
-    //chan.implCloseSelectableChannel()
-  }
-  override protected def implConfigureBlocking(blocks: Boolean) {
-    // protected
-    //chan.implConfigureBlocking(blocks)
-  }
 
   // java 7+
 
