@@ -6,4 +6,5 @@ import jnr.unixsocket.UnixSocketAddress
 
 case class Addr(addr: UnixSocketAddress) extends InetSocketAddress(0) {
   def this(file: File) = this(new UnixSocketAddress(file))
+  override def toString() = s"Addr($addr)"
 }

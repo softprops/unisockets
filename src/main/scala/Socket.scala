@@ -12,11 +12,15 @@ import jnr.unixsocket.{ Native, UnixSocketAddress, UnixSocketChannel }
 // http://www.docjar.com/html/api/sun/nio/ch/SocketAdaptor.java.html
 import jnr.constants.platform.{ SocketLevel, SocketOption }
 
+
+object Socket {
+  def open(file: File): Socket =
+    Socket(UnixSocketChannel.open(new UnixSocketAddress(file)))
+}
+
 case class Socket(
   chan: UnixSocketChannel,
   socketChannel: Option[SocketChannel] = None) extends JSocket {
-
-  def this(file: File) = this(UnixSocketChannel.open(new UnixSocketAddress(file)))
   @volatile private[this] var closed = false
   @volatile private[this] var indown = false
   @volatile private[this] var outdown = false
@@ -76,7 +80,7 @@ case class Socket(
 
   //override def getReceiveBufferSize = null
 
-  override def getRemoteSocketAddress =
+  override def getRemoteSocketAddress: SocketAddress =
     Option(chan.getRemoteSocketAddress).map(Addr(_)).orNull
 
   //override def getReuseAddress = null

@@ -8,10 +8,12 @@ import java.nio.channels.spi.SelectorProvider
 import jnr.unixsocket.{ UnixSocketAddress, UnixSocketChannel }
 import scala.collection.JavaConverters._
 
+object SocketChannel {
+  def open(file: File) = this(UnixSocketChannel.open(new UnixSocketAddress(file)))
+}
+
 case class SocketChannel(chan: UnixSocketChannel)
   extends JSocketChannel(SelectorProvider.provider) {
-
-  def this(file: File) = this(UnixSocketChannel.open(new UnixSocketAddress(file)))
 
   override def connect(addr: SocketAddress): Boolean =
     addr match {
