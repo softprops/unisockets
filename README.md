@@ -15,13 +15,13 @@ val addr = Addr(File("/var/run/unix.sock"))
 
 You can create both instances of nio SocketChannels
 
-```
+```scala
 val channel = unisockets.SocketChannel.open(addr)
 ```
 
 and old io Sockets
 
-```
+```scala
 val socket = unisockets.Socket.open(addr)
 ```
 
