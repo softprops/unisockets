@@ -35,7 +35,7 @@ class ClientSocketChannelFactory extends NioClientSocketChannelFactory {
   }
 
   override def newChannel(pl: ChannelPipeline): SocketChannel = {
-    new NioSocketChannel(null, this, pl, ourSink, null, ourWorkerPool.nextWorker) {
+    new NioSocketChannel(null, this, pl, ourSink, openChannel, ourWorkerPool.nextWorker) {
       Channels.fireChannelOpen(this)
     }
     // new NioClientSocketChannel(this, pipeline, sink, workerPool.nextWorker())
