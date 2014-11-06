@@ -71,19 +71,20 @@ case class SocketChannel private[unisockets](
     chan.read(dst)
 
   override def read(dsts: Array[ByteBuffer], offset: Int, len: Int) =
-    throw new IOException("not supported")
+    Unsupported("ScatteringByteChannel.read")
 
   override def write(src: ByteBuffer) =
     chan.write(src)
 
   override def write(srcs: Array[ByteBuffer], offset: Int, len: Int) =
-    throw new IOException("not supported")
+    Unsupported("ScatteringByteChannel.write")
 
   override def socket() = Socket(chan, Some(this))
 
   // java 7+
 
-  def getOption[T](name: SocketOption[T]) = throw new RuntimeException("not supported")
+  def getOption[T](name: SocketOption[T]) =
+    Unsupported("getOption")
 
   def setOption[T](name: SocketOption[T], value: T) = this
 
@@ -95,8 +96,7 @@ case class SocketChannel private[unisockets](
     Option(chan.getRemoteSocketAddress).map(Addr(_)).orNull
 
   def bind(jaddr: SocketAddress) =
-    throw new UnsupportedOperationException(
-      "binding is currently unsupported")
+    Unsupported.bind
 
   def shutdownInput() = {
     chan.shutdownInput

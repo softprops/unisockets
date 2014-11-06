@@ -29,8 +29,7 @@ case class Socket private[unisockets](
   private[this] lazy val out = Channels.newOutputStream(chan)
 
   override def bind(jaddr: SocketAddress) =
-    throw new UnsupportedOperationException(
-      "binding is currently unsupported")
+    Unsupported.bind
 
   override def close() = {
     chan.close()
