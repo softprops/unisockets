@@ -33,8 +33,8 @@ case class Socket private[unisockets](
       case unix: Addr =>
         super.bind(jaddr)
       case _ =>
-        throw new IOException(
-          s"$jaddr is not an instance of socketeer.Addr")
+        throw new IllegalArgumentException(
+          s"address of type ${jaddr.getClass} are not supported. use a unisockets.Addr")
     }
 
   override def close() = {
@@ -50,8 +50,8 @@ case class Socket private[unisockets](
       case unix: Addr =>
         chan.connect(unix.addr) // timeout not supported
       case _ =>
-        throw new IOException(
-          s"$jaddr is not an instance of socketeer.Addr")
+        throw new IllegalArgumentException(
+          s"address of type ${jaddr.getClass} are not supported. use a unisockets.Addr")
     }
 
   override def getChannel =
