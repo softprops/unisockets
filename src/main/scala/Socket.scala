@@ -2,20 +2,19 @@ package unisockets
 
 import java.net.{
   Socket => JSocket,
-  SocketAddress,
-  SocketOptions
+  SocketAddress
 }
 import java.io.{ File, IOException }
 import java.nio.channels.Channels
-import jnr.unixsocket.{ Native, UnixSocketAddress, UnixSocketChannel }
-
-// http://www.docjar.com/html/api/sun/nio/ch/SocketAdaptor.java.html
-import jnr.constants.platform.{ SocketLevel, SocketOption }
-
+import jnr.unixsocket.{ UnixSocketAddress, UnixSocketChannel }
 
 object Socket {
   def open(file: File): Socket =
-    Socket(UnixSocketChannel.open(new UnixSocketAddress(file)))
+    open(Addr(file))
+  
+  def open(addr: Addr): Socket =
+    Socket(UnixSocketChannel.open(addr.addr))
+
   def open(): Socket =
     Socket(UnixSocketChannel.open())
 }
