@@ -21,8 +21,8 @@ object Socket {
 }
 
 case class Socket private[unisockets](
-  chan: UnixSocketChannel,
-  socketChannel: Option[SocketChannel] = None) extends JSocket {
+  private val chan: UnixSocketChannel,
+  private val socketChannel: Option[SocketChannel] = None) extends JSocket {
   @volatile private[this] var closed = false
   @volatile private[this] var indown = false
   @volatile private[this] var outdown = false
