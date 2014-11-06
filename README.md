@@ -4,9 +4,8 @@ dressing up [unix domain sockets](http://en.wikipedia.org/wiki/Unix_domain_socke
 
 ## usage
 
-
 A unix domain socket is typically a reference to a file descriptor. unisockets defines an implementation of a `SocketAddress` for
-these file descriptors called `Addrs`.
+these file descriptors called `Addr`.
 
 ```scala
 import java.io.File
