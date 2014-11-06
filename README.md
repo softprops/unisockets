@@ -9,7 +9,7 @@ these file descriptors called `Addr`.
 
 ```scala
 import java.io.File
-val addr = Addr(File("/var/run/unix.sock"))
+val addr = Addr(new File("/var/run/unix.sock"))
 ```
 
 You can create both instances of nio SocketChannels
