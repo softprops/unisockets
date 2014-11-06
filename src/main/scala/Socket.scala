@@ -20,7 +20,7 @@ object Socket {
     Socket(UnixSocketChannel.open())
 }
 
-case class Socket(
+case class Socket private[unisockets](
   chan: UnixSocketChannel,
   socketChannel: Option[SocketChannel] = None) extends JSocket {
   @volatile private[this] var closed = false

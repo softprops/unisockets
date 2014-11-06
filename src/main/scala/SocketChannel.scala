@@ -29,7 +29,7 @@ object SocketChannel {
   }
 }
 
-case class SocketChannel(chan: UnixSocketChannel)
+case class SocketChannel private[unisockets](chan: UnixSocketChannel)
   extends JSocketChannel(chan.provider) {
 
   // AbstractSelectableChannel interface
