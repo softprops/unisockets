@@ -94,7 +94,9 @@ case class SocketChannel private[unisockets](
   def getRemoteAddress =
     Option(chan.getRemoteSocketAddress).map(Addr(_)).orNull
 
-  def bind(jaddr: SocketAddress) = this
+  def bind(jaddr: SocketAddress) =
+    throw new UnsupportedOperationException(
+      "binding is currently unsupported")
 
   def shutdownInput() = {
     chan.shutdownInput
