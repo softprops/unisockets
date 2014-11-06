@@ -8,7 +8,8 @@ class SocketChannelSpec extends FunSpec {
   describe("SocketChannel") {
     it ("should work") {
       val req = "GET /images/json HTTP/1.1\r\n\r\n"
-      val socket = SocketChannel.open(new File("/var/run/docker.sock")).socket()
+      val chan = SocketChannel.open(new File("/var/run/docker.sock"))
+      val socket = chan.socket()
       new PrintWriter(socket.getOutputStream) {
         print(req)
         flush()

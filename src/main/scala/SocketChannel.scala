@@ -4,6 +4,7 @@ import java.io.{ File, IOException }
 import java.net.{ SocketAddress, SocketOption }
 import java.nio.ByteBuffer
 import java.nio.channels.{ SocketChannel => JSocketChannel, UnsupportedAddressTypeException }
+import java.nio.channels.spi.AbstractSelectableChannel
 import jnr.unixsocket.{ UnixSocketAddress, UnixSocketChannel }
 import scala.collection.JavaConverters._
 
@@ -12,6 +13,20 @@ object SocketChannel {
     SocketChannel(UnixSocketChannel.open(new UnixSocketAddress(file)))
   def open() =
     SocketChannel(UnixSocketChannel.open())
+
+  private[unisockets] lazy val implCloseSelectableChannel = {
+    val method = classOf[AbstractSelectableChannel].getDeclaredMethod(
+      "implCloseSelectableChannel")
+    method.setAccessible(true)
+    method
+  }
+
+  private[unisockets] lazy val implConfigureBlocking = {
+    val method = classOf[AbstractSelectableChannel].getDeclaredMethod(
+      "implConfigureBlocking", classOf[Boolean])
+    method.setAccessible(true)
+    method
+  }
 }
 
 case class SocketChannel(chan: UnixSocketChannel)
@@ -20,13 +35,12 @@ case class SocketChannel(chan: UnixSocketChannel)
   // AbstractSelectableChannel interface
 
   protected def implCloseSelectableChannel() {
-    // protected!
-    //chan.implCloseSelectableChannel()
+    SocketChannel.implCloseSelectableChannel.invoke(chan)
   }
 
   protected def implConfigureBlocking(blocks: Boolean) {
-    // protected!
-    //chan.implConfigureBlocking(blocks)
+    SocketChannel.implConfigureBlocking.invoke(
+      chan, java.lang.Boolean.valueOf(blocks))
   }
 
   // SocketChannel interface
