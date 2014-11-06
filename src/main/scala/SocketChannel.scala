@@ -5,8 +5,8 @@ import java.net.{ SocketAddress, SocketOption }
 import java.nio.ByteBuffer
 import java.nio.channels.{ SocketChannel => JSocketChannel, UnsupportedAddressTypeException }
 import java.nio.channels.spi.AbstractSelectableChannel
+import java.util.Collections
 import jnr.unixsocket.{ UnixSocketAddress, UnixSocketChannel }
-import scala.collection.JavaConverters._
 
 object SocketChannel {
   def open(file: File): SocketChannel =
@@ -87,7 +87,7 @@ case class SocketChannel private[unisockets](
 
   def setOption[T](name: SocketOption[T], value: T) = this
 
-  def supportedOptions() = Set.empty[SocketOption[_]].asJava
+  def supportedOptions() = Collections.emptySet[SocketOption[_]]
 
   def getLocalAddress = null // never bound
 
