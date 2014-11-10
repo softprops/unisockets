@@ -54,7 +54,10 @@ case class SocketChannel private[unisockets](
     addr match {
       case unix: Addr =>
         chan.connect(unix.addr)
-      case _ =>
+      case Addr.Potential(unix) =>
+        connect(unix)
+      case not =>
+        System.err.println(s"$not, a ${not.getClass}, is not a supported addr")
         throw new UnsupportedAddressTypeException()
     }
 
