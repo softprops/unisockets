@@ -3,8 +3,8 @@ package unisockets
 import java.io.{ File, IOException }
 import java.net.{ SocketAddress, SocketOption }
 import java.nio.ByteBuffer
-import java.nio.channels.{ SocketChannel => JSocketChannel, UnsupportedAddressTypeException }
-import java.nio.channels.spi.AbstractSelectableChannel
+import java.nio.channels.{ Selector, SelectionKey, SocketChannel => JSocketChannel, UnsupportedAddressTypeException }
+import java.nio.channels.spi.{ AbstractInterruptibleChannel, AbstractSelectableChannel }
 import java.util.Collections
 import jnr.unixsocket.{ UnixSocketAddress, UnixSocketChannel }
 
@@ -31,10 +31,16 @@ object SocketChannel {
     method.setAccessible(true)
     method
   }
+
+  private[unisockets] lazy val openFld = {
+    val fld = classOf[AbstractInterruptibleChannel].getDeclaredField("open")
+    fld.setAccessible(true)
+    fld
+  }
 }
 
 case class SocketChannel private[unisockets](
-  private val chan: UnixSocketChannel)
+  val chan: UnixSocketChannel)
   extends JSocketChannel(chan.provider) {
 
   // AbstractSelectableChannel interface
@@ -46,6 +52,7 @@ case class SocketChannel private[unisockets](
   protected def implConfigureBlocking(blocks: Boolean) {
     SocketChannel.implConfigureBlocking.invoke(
       chan, java.lang.Boolean.valueOf(blocks))
+    println(s"implConfigureBlocking($blocks)")
   }
 
   // SocketChannel interface

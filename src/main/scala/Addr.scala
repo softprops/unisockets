@@ -8,7 +8,7 @@ object Addr {
   def apply(file: File): Addr = Addr(new UnixSocketAddress(file), Some(file))
   object Potential {
     def unapply(inet: InetSocketAddress): Option[Addr] =
-      new File(inet.getHostName.replaceFirst("unix://", "")) match {
+      new File(inet.getHostName.replaceFirst("unix://", "").takeWhile(_ != ':')) match {
         case file if file.exists => Some(Addr(file))
         case _ => None
       }
