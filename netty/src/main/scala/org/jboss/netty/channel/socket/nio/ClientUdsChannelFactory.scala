@@ -1,5 +1,3 @@
-//package unisockets.netty
-
 // package exists here so we can access some package private members of netty's socket.nio package as well
 package org.jboss.netty.channel.socket.nio
 import org.jboss.netty.channel.{

@@ -8,7 +8,7 @@ import dispatch.Defaults._
 import com.ning.http.client.providers.netty.{ NettyAsyncHttpProviderConfig }
 import com.ning.http.client.ProxyServer
 
-import org.jboss.netty.channel.socket.nio.ClientUdsSocketChannelFactory
+//import org.jboss.netty.channel.socket.nio.ClientUdsSocketChannelFactory
 import org.jboss.netty.logging.{ InternalLoggerFactory, Log4JLoggerFactory }
 import scala.concurrent.Await
 import scala.concurrent.duration._
