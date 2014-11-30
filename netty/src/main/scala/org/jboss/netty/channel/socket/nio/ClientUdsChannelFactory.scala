@@ -13,6 +13,7 @@ import org.jboss.netty.logging.InternalLoggerFactory
 import java.io.IOException
 import java.net.SocketAddress
 import java.nio.channels.{ ClosedChannelException, SelectionKey, Selector, SocketChannel => JSocketChannel }
+import java.util.{ Set => JSet }
 import java.util.concurrent.{ Executor, Executors, TimeUnit }
 
 import jnr.enxio.channels.NativeSelectorProvider
@@ -30,12 +31,12 @@ object ClientUdsSocketChannelFactory {
 } 
 
 class ClientUdsSocketChannelFactory
- (bossExec: Executor = Executors.newCachedThreadPool,
+ (bossExec: Executor   = Executors.newCachedThreadPool,
   workerExec: Executor = Executors.newCachedThreadPool)
   extends NioClientSocketChannelFactory {
   import ClientUdsSocketChannelFactory._
 
-  private[this] lazy val ourWorkerPool: NioWorkerPool =
+  private[this] lazy val workers: NioWorkerPool =
     new NioWorkerPool(workerExec, DefaultIOThreads) {
 
       override protected def createWorker(executor: Executor): NioWorker =
@@ -69,7 +70,7 @@ class ClientUdsSocketChannelFactory
                         log.debug(s"worker#read() fin reading $fin bytes")
                         fin
                       }
-                    case none =>
+                    case _ =>
                       log.debug(s"worker#read() fin reading $readCount bytes")
                       readCount
                   }
@@ -84,7 +85,7 @@ class ClientUdsSocketChannelFactory
               val (success, bytes) = readBytes
               if (bytes > 0) {
                 buf.flip()
-                val channelBuf= bufferFactory.getBuffer(bytes)
+                val channelBuf = bufferFactory.getBuffer(bytes)
                 channelBuf.setBytes(0, buf)
                 channelBuf.writerIndex(bytes)
                 predictor.previousReceiveBufferSize(bytes)
@@ -114,7 +115,7 @@ class ClientUdsSocketChannelFactory
                     // https://github.com/netty/netty/blob/netty-3.9.5.Final/src/main/java/org/jboss/netty/channel/socket/nio/NioWorker.java#L151-L157
                     log.debug(
                       s"worker: ${chan.channel} registering selector ${selector} with att $chan")
-                    // todo: use unix channel interface to register
+                    log.debug(s"selector selected keys ${selector.selectedKeys} keys ${selector.keys}")
                     chan.channel match {
                       case unix: unisockets.SocketChannel =>
                         log.debug(s"worker: it's unix")
@@ -122,7 +123,7 @@ class ClientUdsSocketChannelFactory
                           selector, chan.getRawInterestOps(), chan)
                       case other =>
                         log.error(s"worker: it's not unix")
-                        chan.channel.register(
+                        other.register(
                           selector, chan.getRawInterestOps(), chan)
                     }
                     
@@ -132,12 +133,11 @@ class ClientUdsSocketChannelFactory
                       chan.setConnected()
                       future.setSuccess()
                     }
-                    //Channels.fireChannelConnected(channel, remoteAddress)
+                    Channels.fireChannelConnected(channel, channel.getRemoteAddress)
 
                   } catch {
                     case e: Throwable =>
                       log.error(s"worker: reg failed with ${e}")
-                      // todo: https://github.com/netty/netty/blob/netty-3.9.5.Final/src/main/java/org/jboss/netty/channel/socket/nio/NioWorker.java#L164-L172
                       future.setFailure(e)
                       close(chan, Channels.succeededFuture(chan))
                   }
@@ -147,15 +147,13 @@ class ClientUdsSocketChannelFactory
                 super.createRegisterTask(channel, future)
             }
           }
-        }      
+        }
     }
 
   private[this] lazy val bosses = {
     val timer = new HashedWheelTimer()
-    // https://github.com/netty/netty/blob/netty-3.9.5.Final/src/main/java/org/jboss/netty/channel/socket/nio/NioClientBoss.java
-    // may need to register native selector here...
-
-    class UDSBoss extends AbstractNioSelector(bossExec, null) with Boss { boss =>
+    /** see https://github.com/netty/netty/blob/netty-3.9.5.Final/src/main/java/org/jboss/netty/channel/socket/nio/NioClientBoss.java */
+    class UdsBoss extends AbstractNioSelector(bossExec, null) with Boss { boss =>
 
       /** use uds channel selector */
       selector = jnr.enxio.channels.NativeSelectorProvider.getInstance().openSelector
@@ -210,8 +208,6 @@ class ClientUdsSocketChannelFactory
               case chan =>
                 log.error(s"boss: not provided with a unisocket")
             }
-            
-            
           } catch {
             case e: ClosedChannelException =>
               log.error(s"boss: error registering channel")
@@ -244,9 +240,9 @@ class ClientUdsSocketChannelFactory
           log.error(s"boss: close ($att not nio socket channel)")
       }
 
-      private def processConnectTimeout(keys: java.util.Set[SelectionKey], currentTimeNanos: Long) =
+      private def processConnectTimeout(keys: JSet[SelectionKey], currentTimeNanos: Long) =
         for (key <- keys.asScala) {
-          if (key != null/*hrm*/ && key.isValid) key.attachment() match {
+          if (key != null/*hrm*/ && key.isValid) key.attachment match {
             case ch: NioSocketChannel =>
               log.error("boss: connection timeout")
             case att =>
@@ -254,59 +250,52 @@ class ClientUdsSocketChannelFactory
           }
         }
 
-      private def processSelectedKeys(selectedKeys: java.util.Set[SelectionKey]) =
-        for (key <- selectedKeys.asScala) {
-          if (!key.isValid) {
-            log.debug("boss: connection close")
-            close(key)
-          } else try {
-            if (key.isConnectable) key.attachment() match {
-              case chan: UdsNioSocketChannel =>
-                if (chan.channel.finishConnect) {
-                  key.cancel()
-                  log.debug(s"boss: connect finished here. need to connect the chan here, asking worker ${chan.getWorker} to do so")
-                  chan.getWorker.register(chan, chan.connectFuture)
-                }
-              case unix: UnixSocketChannel =>
-                if (unix.finishConnect) {
-                  key.cancel()
-                  log.debug("boss: unix connect finished here. need to connect the chan here")
-                }
-              case att =>
-                log.error(s"boss: processSelectedKeys($key): $att not nio socket channel")
-            }
-          } catch {
-            case e: Throwable =>
-              log.error("boss: error throwing while processing selection keys")
-              e.printStackTrace()
-              key.attachment() match {
+      private def processSelectedKeys(selectedKeys: JSet[SelectionKey]) =
+        if (!selectedKeys.isEmpty) { // avoid garbage -> https://github.com/netty/netty/issues/597
+          for (key <- selectedKeys.asScala) {
+            if (!key.isValid) {
+              log.debug("boss: connection close")
+              close(key)
+            } else try {
+              if (key.isConnectable) key.attachment match {
                 case chan: UdsNioSocketChannel =>
-                  log.error("boss: error thrown. should throw here")
-                  chan.connectFuture.setFailure(e)
-                  Channels.fireExceptionCaught(chan, e)
-                  key.cancel() // Some JDK implementations run into an infinite loop without this.
-                  log.error(s"boss exception: asking worker to close ${chan.getWorker}")
-                  chan.getWorker.close(chan, Channels.succeededFuture(chan))
+                  if (chan.channel.finishConnect) {
+                    key.cancel()
+                    log.debug(s"boss: connect finished here. need to connect the chan here, asking worker ${chan.getWorker} to do so")
+                    chan.getWorker.register(chan, chan.connectFuture)
+                  }
+                case unix: UnixSocketChannel =>
+                  if (unix.finishConnect) {
+                    key.cancel()
+                    log.debug("boss: unix connect finished here. need to connect the chan here")
+                  }
                 case att =>
-                  log.error(s"boss: error thrown. $key attachment $att not nio socket channel")
-              }
-          }
+                  log.error(s"boss: processSelectedKeys($key): $att not nio socket channel")
+              } else log.error(s"key $key was not connectable?")
+            } catch {
+              case e: Throwable =>
+                log.error("boss: error throwing while processing selection keys")
+                e.printStackTrace()
+                key.attachment match {
+                  case chan: UdsNioSocketChannel =>
+                    log.error("boss: error thrown. should throw here")
+                    chan.connectFuture.setFailure(e)
+                    Channels.fireExceptionCaught(chan, e)
+                    key.cancel() // Some JDK implementations run into an infinite loop without this.
+                    log.error(s"boss exception: asking worker to close ${chan.getWorker}")
+                    chan.getWorker.close(chan, Channels.succeededFuture(chan))
+                  case att =>
+                    log.error(s"boss: error thrown. $key attachment $att not nio socket channel")
+                }
+            }
         }
+      }
     }
 
-    (new AbstractNioBossPool[UDSBoss](bossExec, 1) {
-      override def newBoss(executor: Executor): UDSBoss =
-        new UDSBoss()
-    }: BossPool[UDSBoss])
-  }
-
-  // NioClientBoss is final and explicitly casts channel
-  private[this] lazy val ourBossPool: NioClientBossPool =  {
-    val timer = new HashedWheelTimer()
-    new NioClientBossPool(bossExec, 1, timer, null) {
-      override def newBoss(executor: Executor): NioClientBoss =
-        new NioClientBoss(executor, timer, null/*thread name determiner*/)
-    }
+    (new AbstractNioBossPool[UdsBoss](bossExec, 1) {
+      override def newBoss(executor: Executor): UdsBoss =
+        new UdsBoss()
+    }: BossPool[UdsBoss])
   }
 
   private[this] lazy val ourSink: ChannelSink = new AbstractNioChannelSink {
@@ -315,9 +304,8 @@ class ClientUdsSocketChannelFactory
         log.debug(s"sink rec event $cse for channel ${cse.getChannel}")
         val chan = cse.getChannel.asInstanceOf[NioSocketChannel]
         val future = cse.getFuture
-        val state = cse.getState
         val value = cse.getValue
-        state match {
+        cse.getState match {
           case ChannelState.OPEN =>
             log.debug(s"sink: state open $value")
             new Exception("uds trace").printStackTrace()
@@ -373,7 +361,7 @@ class ClientUdsSocketChannelFactory
        case uds: UdsNioSocketChannel =>
          log.debug(s"assigning socketChannel $socketChannel connectFuture to $future")
        uds.connectFuture = future
-       /*ourBossPool*/bosses.nextBoss().register(socketChannel, future)
+       bosses.nextBoss().register(socketChannel, future)
      }     
    }
   }
@@ -391,7 +379,7 @@ class ClientUdsSocketChannelFactory
   }
 
   class UdsNioSocketChannel(pipeline: ChannelPipeline)
-    extends NioSocketChannel(null, this, pipeline, ourSink, openChannel, ourWorkerPool.nextWorker) {
+    extends NioSocketChannel(null, this, pipeline, ourSink, openChannel, workers.nextWorker) {
     @volatile var connectFuture: ChannelFuture = null
     Channels.fireChannelOpen(this)
   }
@@ -401,12 +389,11 @@ class ClientUdsSocketChannelFactory
     new UdsNioSocketChannel(pipeline)
   }
 
-  // todo shutdown/release sequence
-
   override def shutdown() {
-    ourBossPool.shutdown()
-    ourWorkerPool.shutdown()
+    bosses.shutdown()
+    workers.shutdown()
     releasePools()
+    super.shutdown()
   }
 
   override def releaseExternalResources() {
@@ -414,16 +401,10 @@ class ClientUdsSocketChannelFactory
     releasePools()
   }
 
-  def releasePools() {
-    ourBossPool match {
+  def releasePools() =
+    Seq(bosses, workers).foreach {
       case rel: ExternalResourceReleasable =>
         rel.releaseExternalResources
       case _ =>
     }
-    ourWorkerPool match {
-      case rel: ExternalResourceReleasable =>
-        rel.releaseExternalResources
-      case _ =>
-    }
-  }
 }
