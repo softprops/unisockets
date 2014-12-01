@@ -422,7 +422,7 @@ class ClientUdsSocketChannelFactory
    }
   }
 
-  protected def openChannel: JSocketChannel = {
+  protected def openChannel: JSocketChannel =
     try {
       val chan = UniSocketChannel.open()
       log.debug(s"set non blocking")
@@ -432,7 +432,6 @@ class ClientUdsSocketChannelFactory
       case NonFatal(e) =>
         throw new ChannelException("failed to open channel", e)
     }
-  }
 
   class UdsNioSocketChannel(pipeline: ChannelPipeline)
     extends NioSocketChannel(null, this, pipeline, sink, openChannel, workers.nextWorker) {
