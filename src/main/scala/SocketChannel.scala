@@ -52,7 +52,6 @@ case class SocketChannel private[unisockets](
   protected def implConfigureBlocking(blocks: Boolean) {
     SocketChannel.implConfigureBlocking.invoke(
       chan, java.lang.Boolean.valueOf(blocks))
-    println(s"implConfigureBlocking($blocks)")
   }
 
   // SocketChannel interface
@@ -64,7 +63,6 @@ case class SocketChannel private[unisockets](
       case Addr.Potential(unix) =>
         connect(unix)
       case not =>
-        System.err.println(s"$not, a ${not.getClass}, is not a supported addr")
         throw new UnsupportedAddressTypeException()
     }
 
