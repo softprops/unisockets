@@ -17,21 +17,20 @@ class ClientSocketChannelFactorySpec extends FunSpec {
     it ("should work") {
       // for debug logging...
       InternalLoggerFactory.setDefaultFactory(new Log4JLoggerFactory)
-
-      // https://github.com/AsyncHttpClient/async-http-client/blob/async-http-client-1.8.14/src/main/java/com/ning/http/client/providers/netty/NettyAsyncHttpProvider.java#L648
-
+      val sockets = new ClientUdsSocketChannelFactory()
       val http = new Http().configure(_.setAsyncHttpClientProviderConfig(
         new NettyAsyncHttpProviderConfig().addProperty(
           NettyAsyncHttpProviderConfig.SOCKET_CHANNEL_FACTORY,
-          new ClientUdsSocketChannelFactory()
+          sockets
         )
       ))
-
-      println(Await.result(
-        http((Req(identity)
-             .setVirtualHost("unix:///var/run/docker.sock") // set virtual host to pick up socket attr
-             .setProxyServer(new ProxyServer("unix:///var/run/docker.sock", 80))) / "images" / "json" > as.String),
-        3.seconds))
+      val future = http((Req(identity)
+             .setVirtualHost("unix:///var/run/docker.sock")
+             .setProxyServer(new ProxyServer("unix:///var/run/docker.sock", 80))) / "images" / "json" > as.String)
+      println(Await.result(future, 3.seconds))
+      // ahc won't call this on close - https://github.com/AsyncHttpClient/async-http-client/blob/async-http-client-1.8.14/src/main/java/com/ning/http/client/providers/netty/NettyAsyncHttpProvider.java#L912
+      sockets.releaseExternalResources()
+      http.shutdown()
     }
   }
 }
