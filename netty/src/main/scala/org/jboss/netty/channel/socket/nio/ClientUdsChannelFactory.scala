@@ -413,7 +413,7 @@ class ClientUdsSocketChannelFactory
          log.debug(s"sink#connect() assigning socketChannel $socketChannel connectFuture to $future")
          uds.connectFuture = future
          bosses.nextBoss().register(socketChannel, future)
-     }     
+     }
    }
   }
 
