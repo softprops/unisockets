@@ -235,7 +235,6 @@ class ClientUdsSocketChannelFactory
             // https://github.com/netty/netty/blob/netty-3.9.5.Final/src/main/java/org/jboss/netty/channel/socket/nio/NioClientBoss.java#L190-L191
             channel.channel match {
               case unix: unisockets.SocketChannel =>
-                // throws java.nio.channels.IllegalBlockingModeException ?
                 unix.chan.configureBlocking(false)
                 log.debug(s"boss#createRegisterTask() unix chan ${unix.chan} registering connect select key with att $channel. selector keys ${boss.selector.keys}")
                 unix.chan.register(
