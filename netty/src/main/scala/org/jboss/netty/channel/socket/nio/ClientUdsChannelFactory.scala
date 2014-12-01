@@ -9,6 +9,7 @@ import org.jboss.netty.channel.socket.SocketChannel
 import org.jboss.netty.util.{ ExternalResourceReleasable, HashedWheelTimer, ThreadRenamingRunnable, ThreadNameDeterminer, Timeout, TimerTask }
 import org.jboss.netty.logging.InternalLoggerFactory
 
+import java.lang.{ Boolean => JBoolean }
 import java.io.IOException
 import java.net.SocketAddress
 import java.nio.channels.{ ClosedChannelException, SelectionKey, Selector, SocketChannel => JSocketChannel }
@@ -351,16 +352,15 @@ class ClientUdsSocketChannelFactory
   }
 
   private[this] lazy val sink: ChannelSink = new AbstractNioChannelSink {
-    override def eventSunk(pipeline: ChannelPipeline, e: ChannelEvent) = e match {
-      case cse: ChannelStateEvent =>
-        log.debug(s"sink#eventSunk() rec event $cse for channel ${cse.getChannel}")
-        val chan = cse.getChannel.asInstanceOf[NioSocketChannel]
+    override def eventSunk(pipeline: ChannelPipeline, e: ChannelEvent) = (e, e.getChannel) match {
+      case (cse: ChannelStateEvent, chan: NioSocketChannel) =>
+        log.debug(s"sink#eventSunk() rec event $cse for channel $chan")
         val future = cse.getFuture
         val value = cse.getValue
         cse.getState match {
           case ChannelState.OPEN =>
             log.debug(s"sink#eventSunk() state open $value")
-            if (java.lang.Boolean.FALSE == value) {
+            if (JBoolean.FALSE == value) {
               chan.worker.close(chan, future)
             }
           case ChannelState.BOUND =>
@@ -387,25 +387,20 @@ class ClientUdsSocketChannelFactory
             log.debug(s"sink#eventSunk() state interest opts $value")
             chan.getWorker.setInterestOps(chan, future, value.asInstanceOf[java.lang.Integer])
         }
-      case me: MessageEvent =>
-        me.getChannel match {
-          case chan: NioSocketChannel =>
-            log.debug("sink#eventSunk() message event ... write from user code")
-            val offered = chan.writeBufferQueue.offer(me)
-            chan.getWorker.writeFromUserCode(chan)
-          case _ =>
-            log.error("sink#eventSunk() message event but not nio socket channel")
-        }        
+      case (me: MessageEvent, chan: NioSocketChannel) =>
+        log.debug("sink#eventSunk() message event ... write from user code")
+        val offered = chan.writeBufferQueue.offer(me)
+        chan.getWorker.writeFromUserCode(chan)
     }
 
    private def connect(
      socketChannel: NioSocketChannel, future: ChannelFuture, addr: SocketAddress) {
-     log.debug(s"sink: connecting to addr $addr...")
+     log.debug(s"sink#connect() connecting to addr $addr...")
      if (socketChannel.channel.connect(addr)) {
-       log.debug(s"sink: scf.connect(...) - asking worker (${socketChannel.getWorker}) to register. channel open ${socketChannel.isOpen}")
+       log.debug(s"sink#connect() asking worker (${socketChannel.getWorker}) to register. channel open ${socketChannel.isOpen}")
        socketChannel.getWorker.register(socketChannel, future)
      } else {
-       log.debug("sink: failed to connect???")
+       log.debug("sink#connect() failed to connect???")
        socketChannel.getCloseFuture().addListener(new ChannelFutureListener {
          def operationComplete(f: ChannelFuture) {
            if (!future.isDone) future.setFailure(new ClosedChannelException)
@@ -415,7 +410,7 @@ class ClientUdsSocketChannelFactory
      future.addListener(ChannelFutureListener.CLOSE_ON_FAILURE)
      socketChannel match {
        case uds: UdsNioSocketChannel =>
-         log.debug(s"assigning socketChannel $socketChannel connectFuture to $future")
+         log.debug(s"sink#connect() assigning socketChannel $socketChannel connectFuture to $future")
        uds.connectFuture = future
        bosses.nextBoss().register(socketChannel, future)
      }     
@@ -425,7 +420,7 @@ class ClientUdsSocketChannelFactory
   protected def openChannel: JSocketChannel =
     try {
       val chan = UniSocketChannel.open()
-      log.debug(s"set non blocking")
+      log.debug("factory#openChannel")
       chan.configureBlocking(false)
       chan
     } catch {
@@ -440,7 +435,7 @@ class ClientUdsSocketChannelFactory
   }
 
   override def newChannel(pipeline: ChannelPipeline): SocketChannel = {
-    log.debug(s"factory: making a new channel for pipeline $pipeline")
+    log.debug(s"factory#newChannel() making a new channel for pipeline $pipeline")
     new UdsNioSocketChannel(pipeline)
   }
 
