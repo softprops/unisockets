@@ -9,7 +9,7 @@ import org.jboss.netty.channel.socket.SocketChannel
 import org.jboss.netty.util.{ ExternalResourceReleasable, HashedWheelTimer, ThreadRenamingRunnable, ThreadNameDeterminer, Timeout, TimerTask }
 import org.jboss.netty.logging.InternalLoggerFactory
 
-import java.lang.{ Boolean => JBoolean }
+import java.lang.{ Boolean => JBoolean, Integer => JInt }
 import java.io.IOException
 import java.net.SocketAddress
 import java.nio.channels.{ ClosedChannelException, SelectionKey, Selector, SocketChannel => JSocketChannel }
@@ -366,10 +366,10 @@ class ClientUdsSocketChannelFactory
           case ChannelState.BOUND =>
             log.debug(s"sink#eventSunk() state bound $value")
             Option(value) match {
-              case Some(addr) =>                
-                // todo: server sockets
+              case Some(addr: SocketAddress) =>
+                // todo: impl server sockets
                 log.debug("sink#eventSunk() should bind")
-                //bind(chan, future, addr.asInstanceOf[SocketAddress])
+                //bind(chan, future, addr)
               case _ =>
                 log.debug("sink#eventSunk() no value so closing")
                 chan.getWorker.close(chan, future)
@@ -377,15 +377,15 @@ class ClientUdsSocketChannelFactory
           case ChannelState.CONNECTED =>
             log.debug(s"sink#eventSunk() state connected $value")
             Option(value) match {
-              case Some(addr) =>
-                connect(chan, future, addr.asInstanceOf[SocketAddress])
+              case Some(addr: SocketAddress) =>
+                connect(chan, future, addr)
               case _ =>
                 log.debug("sink#eventSunk() value so closing")
                 chan.getWorker.close(chan, future)
             }
           case ChannelState.INTEREST_OPS =>
             log.debug(s"sink#eventSunk() state interest opts $value")
-            chan.getWorker.setInterestOps(chan, future, value.asInstanceOf[java.lang.Integer])
+            chan.getWorker.setInterestOps(chan, future, value.asInstanceOf[JInt])
         }
       case (me: MessageEvent, chan: NioSocketChannel) =>
         log.debug("sink#eventSunk() message event ... write from user code")
@@ -397,7 +397,7 @@ class ClientUdsSocketChannelFactory
      socketChannel: NioSocketChannel, future: ChannelFuture, addr: SocketAddress) {
      log.debug(s"sink#connect() connecting to addr $addr...")
      if (socketChannel.channel.connect(addr)) {
-       log.debug(s"sink#connect() asking worker (${socketChannel.getWorker}) to register. channel open ${socketChannel.isOpen}")
+       log.debug(s"sink#connect() asking worker (${socketChannel.getWorker}) to register")
        socketChannel.getWorker.register(socketChannel, future)
      } else {
        log.debug("sink#connect() failed to connect???")
