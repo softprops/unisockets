@@ -3,7 +3,8 @@ package org.jboss.netty.channel.socket.nio
 
 import org.jboss.netty.channel.{
   Channel, Channels, ChannelException, ChannelFuture, ChannelFutureListener, ChannelPipeline, ChannelSink,
-  ChannelState, ChannelEvent, MessageEvent, ChannelStateEvent, ReceiveBufferSizePredictor
+  ChannelState, ChannelEvent, MessageEvent, ChannelStateEvent, ReceiveBufferSizePredictor,
+  ConnectTimeoutException
 }
 import org.jboss.netty.channel.socket.SocketChannel
 import org.jboss.netty.util.{ ExternalResourceReleasable, HashedWheelTimer, ThreadRenamingRunnable, ThreadNameDeterminer, Timeout, TimerTask }
@@ -243,7 +244,11 @@ class ClientUdsSocketChannelFactory
 
           val connectTimeout = channel.getConfig().getConnectTimeoutMillis()
           if (connectTimeout > 0) {
-            //channel.connectDeadlineNanos = System.nanoTime() + connectTimeout * 1000000L
+            channel match {
+              case uds: UdsNioSocketChannel =>
+                uds.connectDeadlineNanos = System.nanoTime() + connectTimeout * 1000000L
+              case _ =>
+            }
           }
         }
       }
@@ -272,8 +277,15 @@ class ClientUdsSocketChannelFactory
       private def processConnectTimeout(keys: JSet[SelectionKey], currentTimeNanos: Long) =
         for (key <- keys.asScala) {
           if (key != null/*hrm*/ && key.isValid) key.attachment match {
-            case ch: NioSocketChannel =>
-              log.error("boss#processConnectTimeout() connection timeout")
+            case ch: UdsNioSocketChannel =>
+              log.debug("boss#processConnectTimeout() connection timeout")
+              if (ch.connectDeadlineNanos > 0
+                  && currentTimeNanos >= ch.connectDeadlineNanos) {
+                val cause = new ConnectTimeoutException("connection timed out")
+                ch.connectFuture.setFailure(cause)
+                Channels.fireExceptionCaught(ch, cause)
+                ch.worker.close(ch, Channels.succeededFuture(ch))
+              }
             case att =>
               log.error(s"boss#processConnectTimeout() processConnectTimeout($key): $att not nio socket channel")
           }
@@ -416,6 +428,7 @@ class ClientUdsSocketChannelFactory
   class UdsNioSocketChannel(pipeline: ChannelPipeline)
     extends NioSocketChannel(null, this, pipeline, sink, openChannel, workers.nextWorker) {
     @volatile var connectFuture: ChannelFuture = null
+    var connectDeadlineNanos: Long = -1 // this doesn't get accessed across threads
     Channels.fireChannelOpen(this)
   }
 

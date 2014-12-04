@@ -16,7 +16,7 @@ class ClientSocketChannelFactorySpec extends FunSpec {
   describe("ClientUdsSocketChannelFactory") {
     it ("should work") {
       // for debug logging...
-      InternalLoggerFactory.setDefaultFactory(new Log4JLoggerFactory)
+      //InternalLoggerFactory.setDefaultFactory(new Log4JLoggerFactory)
       val sockets = new ClientUdsSocketChannelFactory()
       val http = new Http().configure(_.setAsyncHttpClientProviderConfig(
         new NettyAsyncHttpProviderConfig().addProperty(
