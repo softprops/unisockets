@@ -7,7 +7,7 @@ import org.jboss.netty.channel.{
   ConnectTimeoutException
 }
 import org.jboss.netty.channel.socket.SocketChannel
-import org.jboss.netty.util.{ ExternalResourceReleasable, HashedWheelTimer, ThreadRenamingRunnable, ThreadNameDeterminer, Timeout, TimerTask }
+import org.jboss.netty.util.{ ExternalResourceReleasable, HashedWheelTimer, ThreadRenamingRunnable, ThreadNameDeterminer, Timeout, Timer, TimerTask }
 import org.jboss.netty.logging.InternalLoggerFactory
 
 import java.lang.{ Boolean => JBoolean, Integer => JInt }
@@ -35,7 +35,8 @@ object ClientUdsSocketChannelFactory {
 /** An NioClientSocketChannelFactory that reads and reads from SocketChannel backed by a unix domain socket */
 class ClientUdsSocketChannelFactory
  (bossExec: Executor   = Executors.newCachedThreadPool,
-  workerExec: Executor = Executors.newCachedThreadPool)
+  workerExec: Executor = Executors.newCachedThreadPool,
+  timer: Timer = new HashedWheelTimer())
   extends NioClientSocketChannelFactory {
   import ClientUdsSocketChannelFactory._
 
@@ -63,7 +64,8 @@ class ClientUdsSocketChannelFactory
           override def close(k: SelectionKey) = Option(k).foreach { // options because selector.keys was observed to contain a null (pdi)
             _.attachment match {
               case chan: AbstractNioChannel[_] =>
-                log.debug("worker#close(k)")
+                log.debug(s"worker#close($k)")
+                println(s"worker#close($k)")
                 close(chan, Channels.succeededFuture(chan))
               case other =>
                 log.debug(s"worker.close(k) with a non AbstractNioChannel att $other")
@@ -74,6 +76,7 @@ class ClientUdsSocketChannelFactory
           // todo: we want maintain a uds selector ( NativeSelectorProvider.getInstance().openSelector )
           override def rebuildSelector() {
             log.debug("worker#rebuildSelector() - rebuilding selector")
+            println("worker#rebuildSelector() - rebuilding selector")
             super.rebuildSelector()
           }
 
@@ -179,7 +182,7 @@ class ClientUdsSocketChannelFactory
     }
 
   private[this] lazy val bosses = {
-    val timer = new HashedWheelTimer()
+
 
     /** see https://github.com/netty/netty/blob/netty-3.9.5.Final/src/main/java/org/jboss/netty/channel/socket/nio/NioClientBoss.java */
     class UdsBoss extends AbstractNioSelector(bossExec, null) with Boss { boss =>
@@ -337,7 +340,6 @@ class ClientUdsSocketChannelFactory
 
       override def newBoss(executor: Executor): UdsBoss =
         new UdsBoss()
-
 
       override def releaseExternalResources() {
         log.debug("bosses#releaseExternalResources()")
