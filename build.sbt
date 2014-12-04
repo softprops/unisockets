@@ -4,7 +4,7 @@ version in ThisBuild := "0.1.0-SNAPSHOT"
 
 crossScalaVersions in ThisBuild := Seq("2.10.4", "2.11.4")
 
-scalaVersion in ThisBuild = crossScalaVersions.last
+scalaVersion in ThisBuild := crossScalaVersions.value.last
 
 name := "unisockets"
 
