@@ -41,16 +41,6 @@ class ClientUdsSocketChannelFactory
   private[this] lazy val workers: NioWorkerPool =
     new NioWorkerPool(workerExec, DefaultIOThreads) {
 
-      override def releaseExternalResources() {
-        log.debug("workers#releaseExternalResources()")
-        super.releaseExternalResources()
-      }
-
-      override def shutdown() {
-        log.debug("workers#shutdown()")
-        super.shutdown()
-      }
-
       override protected def createWorker(executor: Executor): NioWorker =
         new NioWorker(executor, null/*threadNameDeterminer*/) {
 
@@ -336,10 +326,6 @@ class ClientUdsSocketChannelFactory
       override def newBoss(executor: Executor): UdsBoss =
         new UdsBoss()
 
-      override def shutdown() {
-        log.debug("bosses#shutdown()")
-        super.shutdown()
-      }
 
       override def releaseExternalResources() {
         log.debug("bosses#releaseExternalResources()")

@@ -10,4 +10,4 @@ libraryDependencies ++= Seq(
 
 lazy val unisockets = project.in(file("."))
 
-lazy val netty = project.dependsOn(unisockets)
+lazy val `unisockets-netty` = project.dependsOn(unisockets)
