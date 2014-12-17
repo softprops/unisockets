@@ -48,7 +48,7 @@ class ClientUdsSocketChannelFactory
 
           private[this] val recvPool = new SocketReceiveBufferAllocator()
 
-          // use uds selector, not the default jdk selector
+          // use a uds selector
           selector = NativeSelectorProvider.getInstance().openSelector
 
           override def run() {
@@ -59,6 +59,12 @@ class ClientUdsSocketChannelFactory
           override def shutdown() {
             log.debug("worker#shutdown()")
             super.shutdown()
+          }
+
+          // https://github.com/netty/netty/blob/netty-3.9.5.Final/src/main/java/org/jboss/netty/channel/socket/nio/AbstractNioWorker.java#L347
+          override def close(channel: AbstractNioChannel[_], future: ChannelFuture) {
+            log.debug(s"worker#close($channel,$future)")
+            super.close(channel, future)
           }
 
           override def close(k: SelectionKey) = Option(k).foreach { // options because selector.keys was observed to contain a null (pdi)
@@ -150,6 +156,7 @@ class ClientUdsSocketChannelFactory
                     chan.channel match {
                       case unix: unisockets.SocketChannel =>
                         log.debug(s"worker: it's unix")
+                        unix.chan.configureBlocking(false)
                         unix.chan.register(
                           selector, chan.getRawInterestOps(), chan)
                       case other =>
@@ -187,7 +194,7 @@ class ClientUdsSocketChannelFactory
     /** see https://github.com/netty/netty/blob/netty-3.9.5.Final/src/main/java/org/jboss/netty/channel/socket/nio/NioClientBoss.java */
     class UdsBoss extends AbstractNioSelector(bossExec, null) with Boss { boss =>
 
-      /** use uds channel selector */
+      // use uds channel selector
       selector = jnr.enxio.channels.NativeSelectorProvider.getInstance().openSelector
 
      // @volatile private var timeoutTimer: Option[Timeout] = None
