@@ -71,7 +71,6 @@ class ClientUdsSocketChannelFactory
             _.attachment match {
               case chan: AbstractNioChannel[_] =>
                 log.debug(s"worker#close($k)")
-                println(s"worker#close($k)")
                 close(chan, Channels.succeededFuture(chan))
               case other =>
                 log.debug(s"worker.close(k) with a non AbstractNioChannel att $other")
@@ -111,11 +110,12 @@ class ClientUdsSocketChannelFactory
                 (true, readAll())
               } catch {
                 case e: ClosedChannelException =>
-                  log.error(s"read fail. netty says this doesn't require user attn ${e.getMessage}")
+                  log.debug(s"read fail. netty says this doesn't require user attn ${e.getMessage}")
                   (false, 0)
                 case e: Throwable =>
-                  log.error(s"read fail! ${e.getMessage}")
-                  e.printStackTrace
+                  // fixme: observed periodic bad file descriptor errors
+                  //        sourced from calls from org.jboss.netty.util.internal.DeadLockProofWorker$1.run(DeadLockProofWorker.java:42)
+                  log.debug(s"read fail! ${e.getMessage}")
                   Channels.fireExceptionCaught(chan, e)
                   (false, 0)
               }
