@@ -1,5 +1,3 @@
-name := "unisockets-netty"
-
 libraryDependencies ++= Seq(
   "io.netty" % "netty" % "3.9.2.Final",
   "org.scalatest" %% "scalatest" % "2.2.1" % "test",
