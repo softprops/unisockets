@@ -6,12 +6,12 @@ crossScalaVersions in ThisBuild := Seq("2.10.4", "2.11.4")
 
 scalaVersion in ThisBuild := crossScalaVersions.value.last
 
-name := "unisockets"
+publishArtifact := false
 
-libraryDependencies ++= Seq(
-  "com.github.jnr" % "jnr-unixsocket" % "0.3",
-  "org.scalatest" %% "scalatest" % "2.2.1" % "test")
+publish := {}
 
-lazy val unisockets = project.in(file("."))
+lazy val unisockets = project.in(file(".")).aggregate(`unisockets-core`, `unisockets-netty`)
 
-lazy val `unisockets-netty` = project.dependsOn(unisockets)
+lazy val `unisockets-core` = project
+
+lazy val `unisockets-netty` = project.dependsOn(`unisockets-core`)
