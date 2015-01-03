@@ -28,4 +28,19 @@ val socket = unisockets.Socket.open(addr)
 
 You can also create disconnected instances of each calling `open` without arguments and calling `connect(addr)` at a deferred time.
 
+### netty
+
+The `unisockets-netty` module provides a netty `NioSocketChannel` backed by a `unisockets.SocketChannel`, enabling you to
+build netty clients for UNIX domain socket servers.
+
+```scala 
+import unisockets.ClientUdsSocketChannelFactory
+val sockets = new ClientUdsSocketChannelFactory()
+```
+
+This nio socket channel factory share's many similarities with [NioClientSocketChannelFactories](http://netty.io/3.10/api/org/jboss/netty/channel/socket/nio/NioClientSocketChannelFactory.html)
+
+Client's useing this interface should make sure they call `ClientUdsSocketChannelFactory#releaseExternalResources` to release any resources 
+acquired during request processing.
+
 Doug Tangren (softprops) 2014
