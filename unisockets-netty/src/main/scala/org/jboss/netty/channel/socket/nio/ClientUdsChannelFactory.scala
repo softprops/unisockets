@@ -43,7 +43,7 @@ class ClientUdsSocketChannelFactory
   private[this] lazy val workers: NioWorkerPool =
     new NioWorkerPool(workerExec, DefaultIOThreads) {
 
-      override protected def createWorker(executor: Executor): NioWorker =
+      override protected def newWorker(executor: Executor): NioWorker =
         new NioWorker(executor, null/*threadNameDeterminer*/) {
 
           private[this] val recvPool = new SocketReceiveBufferAllocator()
@@ -158,11 +158,11 @@ class ClientUdsSocketChannelFactory
                         log.debug(s"worker: it's unix")
                         unix.chan.configureBlocking(false)
                         unix.chan.register(
-                          selector, chan.getRawInterestOps(), chan)
+                          selector, chan.getInternalInterestOps(), chan)
                       case other =>
                         log.error(s"worker: it's not unix")
                         other.register(
-                          selector, chan.getRawInterestOps(), chan)
+                          selector, chan.getInternalInterestOps(), chan)
                     }
                     
                     log.debug("worker: registered!")
