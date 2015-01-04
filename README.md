@@ -43,4 +43,6 @@ This nio socket channel factory share's many similarities with [NioClientSocketC
 Client's useing this interface should make sure they call `ClientUdsSocketChannelFactory#releaseExternalResources` to release any resources 
 acquired during request processing.
 
-Doug Tangren (softprops) 2014
+note: the netty interface has only been tested with a netty client pipeline with version `3.9.6.Final` newer versions ( netty 4+ ) are not supported yet but support is planned to be added in the future.
+
+Doug Tangren (softprops) 2014-2015
