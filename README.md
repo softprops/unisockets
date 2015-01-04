@@ -1,9 +1,9 @@
 # unisockets
 
-dressing up [unix domain sockets](http://en.wikipedia.org/wiki/Unix_domain_socket) in a tcp [socket](http://docs.oracle.com/javase/7/docs/api/java/nio/channels/SocketChannel.html) shirt and tie.
+> dressing up [unix domain sockets](http://en.wikipedia.org/wiki/Unix_domain_socket) in a tcp [socket](http://docs.oracle.com/javase/7/docs/api/java/nio/channels/SocketChannel.html) shirt and tie.
 
-<p align="center">
-  <img height="200" src="https://rawgit.com/softprops/unisockets/master/us.svg"/>
+<p>
+  <img height="175" src="https://rawgit.com/softprops/unisockets/master/us.svg"/>
 </p>
 
 
