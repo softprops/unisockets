@@ -17,10 +17,12 @@ unisockets, like tcp sockets, need to be addressable. unisockets defines an impl
 
 ```scala
 import java.io.File
-val addr = Addr(new File("/var/run/unix.sock"))
+val addr = unisockets.Addr(new File("/var/run/unix.sock"))
 ```
 
-You can create both instances of nio SocketChannels
+You can get the path of the file an `Addr` referrs to by invoking `Addr#getHostName`.
+
+You with an `Addr` can create instances of both nio SocketChannels
 
 ```scala
 val channel = unisockets.SocketChannel.open(addr)
