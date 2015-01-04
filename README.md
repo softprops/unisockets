@@ -28,7 +28,7 @@ With an `Addr`, you can create instances of both nio SocketChannels
 val channel = unisockets.SocketChannel.open(addr)
 ```
 
-and old io Sockets with these Addrs
+and old io Sockets.
 
 ```scala
 val socket = unisockets.Socket.open(addr)
