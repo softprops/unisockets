@@ -5,4 +5,4 @@ Initial release of a small library that adapts [Unix domain socket](http://en.wi
 The first release targets unix domain socket clients with a optional adapter for a unix domain socket-backed netty `3.9.6.Final`
 nio socket channel factory.
 
-Learn more in the projects [readme](https://github.com/softprops/unisockets/#readme)
+For examples and more information, see the project's [readme](https://github.com/softprops/unisockets/#readme)
