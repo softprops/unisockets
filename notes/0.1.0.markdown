@@ -1,0 +1,8 @@
+## Initial release
+
+Initial release of a small library that adapts unix domain sockets access to java oio Socket and nio SocketChannel interfaces.
+
+The first release targets unix domain socket clients with optional adapters for providing a unix domain socket-backed netty 3.9.6.Final
+nio socket channel factory.
+
+Learn more in the projects [readme](https://github.com/softprops/unisockets/#readme)
