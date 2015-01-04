@@ -10,6 +10,10 @@ publishArtifact := false
 
 publish := {}
 
+scalacOptions in ThisBuild ++= Seq(Opts.compile.deprecation) ++
+  Seq("-Ywarn-unused-import", "-Ywarn-unused", "-Xlint", "-feature").filter(
+    Function.const(scalaVersion.value.startsWith("2.11")))
+
 lazy val unisockets = project.in(file(".")).aggregate(`unisockets-core`, `unisockets-netty`)
 
 lazy val `unisockets-core` = project

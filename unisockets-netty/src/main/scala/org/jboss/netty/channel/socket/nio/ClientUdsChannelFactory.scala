@@ -2,8 +2,9 @@
 package org.jboss.netty.channel.socket.nio
 
 import org.jboss.netty.channel.{
-  Channel, Channels, ChannelException, ChannelFuture, ChannelFutureListener, ChannelPipeline, ChannelSink,
-  ChannelState, ChannelEvent, MessageEvent, ChannelStateEvent, ReceiveBufferSizePredictor,
+  Channel, Channels, ChannelException, ChannelFuture,
+  ChannelFutureListener, ChannelPipeline, ChannelSink,
+  ChannelState, ChannelEvent, MessageEvent, ChannelStateEvent,
   ConnectTimeoutException
 }
 import org.jboss.netty.channel.socket.SocketChannel
@@ -14,7 +15,7 @@ import java.lang.{ Boolean => JBoolean, Integer => JInt }
 import java.io.IOException
 import java.net.SocketAddress
 import java.nio.channels.{ ClosedChannelException, SelectionKey, Selector, SocketChannel => JSocketChannel }
-import java.nio.channels.spi.{ AbstractSelectableChannel, AbstractSelector, SelectorProvider }
+import java.nio.channels.spi.{ AbstractSelectableChannel, AbstractSelector }
 import java.util.{ Set => JSet }
 import java.util.concurrent.{ Executor, Executors, TimeUnit }
 
@@ -33,13 +34,16 @@ object ClientUdsSocketChannelFactory {
   val DefaultIOThreads = Runtime.getRuntime.availableProcessors * 2
 
   private lazy val implCloseSelector = {
-    val method = classOf[AbstractSelector].getDeclaredMethod("implCloseSelector")
+    val method = classOf[AbstractSelector].getDeclaredMethod(
+      "implCloseSelector")
     method.setAccessible(true)
     method
   }
     
   private lazy val register = {
-    val method = classOf[AbstractSelector].getDeclaredMethod("register", classOf[AbstractSelectableChannel], classOf[Int], classOf[Object])
+    val method = classOf[AbstractSelector].getDeclaredMethod(
+      "register",
+      classOf[AbstractSelectableChannel], classOf[Int], classOf[Object])
     method.setAccessible(true)
     method
   }
@@ -71,7 +75,7 @@ object ClientUdsSocketChannelFactory {
     override def wakeup() = underlying.wakeup
   }
 
-  def newUdsSelector: Selector =
+  private def openSelector: Selector =
     NullSafeSelector(NativeSelectorProvider.getInstance().openSelector)
 }
 
@@ -92,7 +96,7 @@ class ClientUdsSocketChannelFactory
           private[this] val recvPool = new SocketReceiveBufferAllocator()
 
           // use a uds selector
-          selector = newUdsSelector
+          selector = openSelector
 
           override def run() {
             super.run()
@@ -169,7 +173,7 @@ class ClientUdsSocketChannelFactory
               } else true
 
             case (chan, att) =>
-              log.error("worker#read() unexpected chan $chan and attachment $att")
+              log.error(s"worker#read() unexpected chan $chan and attachment $att")
               false
           }
 
@@ -226,7 +230,7 @@ class ClientUdsSocketChannelFactory
     class UdsBoss extends AbstractNioSelector(bossExec, null) with Boss { boss =>
 
       // use uds channel selector
-      selector = newUdsSelector
+      selector = openSelector
 
       private[this] val wakeupTask = new TimerTask() {
         def run(timeout: Timeout) {
@@ -253,29 +257,26 @@ class ClientUdsSocketChannelFactory
           val timeout = channel.getConfig().getConnectTimeoutMillis()
           if (timeout > 0) {
             if (!channel.isConnected()) {
-              log.debug("boss#createRegisterTask() should schedule wake up task")
+              log.debug(s"boss#createRegisterTask() should schedule wake up task")
               /*channel.timeoutTimer = Some(*/timer.newTimeout(
                 wakeupTask,
                 timeout, TimeUnit.MILLISECONDS)
             }
           }
-          try {
-            val selector = boss.selector
-            log.debug(s"boss#createRegisterTask() should register here for ${channel.channel} boss selector ${boss.selector}")
-            // https://github.com/netty/netty/blob/netty-3.9.5.Final/src/main/java/org/jboss/netty/channel/socket/nio/NioClientBoss.java#L190-L191
-            channel.channel match {
-              case unix: unisockets.SocketChannel =>
-                unix.chan.configureBlocking(false)
-                log.debug(s"boss#createRegisterTask() unix chan ${unix.chan} registering connect select key with att $channel. selector keys ${boss.selector.keys}")
-                unix.chan.register(
+          // https://github.com/netty/netty/blob/netty-3.9.5.Final/src/main/java/org/jboss/netty/channel/socket/nio/NioClientBoss.java#L190-L191
+          try channel.channel match {
+            case unix: unisockets.SocketChannel =>
+              unix.chan.configureBlocking(false)
+              log.debug(
+                s"boss#createRegisterTask() unix chan ${unix.chan} registering connect select key with att $channel. selector keys ${boss.selector.keys}")
+              unix.chan.register(
                   boss.selector, SelectionKey.OP_CONNECT, channel)
-                log.debug(s"boss#createRegisterTask() registered ${boss.selector} op connect with channel $channel")
-              case chan =>
-                log.error(s"boss#createRegisterTask() not provided with a unisocket")
-            }
+              log.debug(s"boss#createRegisterTask() registered ${boss.selector} op connect with channel $channel")
+            case chan =>
+              log.error(s"boss#createRegisterTask() not provided with a unisocket")
           } catch {
             case e: ClosedChannelException =>
-              log.error("boss#createRegisterTask() asking worker ${channel.getWorker} to close")
+              log.error(s"boss#createRegisterTask() asking worker ${channel.getWorker} to close")
               channel.getWorker.close(channel, Channels.succeededFuture(channel))
           }
 
@@ -425,7 +426,7 @@ class ClientUdsSocketChannelFactory
         }
       case (me: MessageEvent, chan: NioSocketChannel) =>
         log.debug("sink#eventSunk() message event ... write from user code")
-        val offered = chan.writeBufferQueue.offer(me)
+        assert(chan.writeBufferQueue.offer(me))
         chan.getWorker.writeFromUserCode(chan)
     }
 
