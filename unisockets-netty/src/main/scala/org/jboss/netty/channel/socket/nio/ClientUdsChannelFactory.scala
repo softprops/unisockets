@@ -124,7 +124,6 @@ class ClientUdsSocketChannelFactory
           // todo: we want maintain a uds selector ( NativeSelectorProvider.getInstance().openSelector )
           override def rebuildSelector() {
             log.debug("worker#rebuildSelector() - rebuilding selector")
-            println("worker#rebuildSelector() - rebuilding selector")
             super.rebuildSelector()
           }
 
@@ -292,8 +291,6 @@ class ClientUdsSocketChannelFactory
             }
           } catch {
             case e: ClosedChannelException =>
-              log.error(s"boss#createRegisterTask() error registering channel")
-              e.printStackTrace()
               log.error("boss#createRegisterTask() asking worker ${channel.getWorker} to close")
               channel.getWorker.close(channel, Channels.succeededFuture(channel))
           }
@@ -381,7 +378,6 @@ class ClientUdsSocketChannelFactory
             } catch {
               case e: Throwable =>
                 log.error("boss#processSelectedKeys() error throwing while processing selection keys")
-                e.printStackTrace()
                 key.attachment match {
                   case chan: UdsNioSocketChannel =>
                     log.error("boss#processSelectedKeys() error thrown. should throw here")
