@@ -1,3 +1,5 @@
+description := "Provides netty bindings for an nio unix domain socket factory"
+
 libraryDependencies ++= Seq(
   "io.netty" % "netty" % "3.9.6.Final",
   "org.scalatest" %% "scalatest" % "2.2.1" % "test",
