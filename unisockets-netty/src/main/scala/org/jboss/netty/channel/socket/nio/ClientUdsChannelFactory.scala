@@ -14,6 +14,7 @@ import java.lang.{ Boolean => JBoolean, Integer => JInt }
 import java.io.IOException
 import java.net.SocketAddress
 import java.nio.channels.{ ClosedChannelException, SelectionKey, Selector, SocketChannel => JSocketChannel }
+import java.nio.channels.spi.{ AbstractSelectableChannel, AbstractSelector, SelectorProvider }
 import java.util.{ Set => JSet }
 import java.util.concurrent.{ Executor, Executors, TimeUnit }
 
@@ -30,7 +31,49 @@ import unisockets.{ SocketChannel => UniSocketChannel }
 object ClientUdsSocketChannelFactory {
   val log = InternalLoggerFactory.getInstance(getClass)
   val DefaultIOThreads = Runtime.getRuntime.availableProcessors * 2
-} 
+
+  private lazy val implCloseSelector = {
+    val method = classOf[AbstractSelector].getDeclaredMethod("implCloseSelector")
+    method.setAccessible(true)
+    method
+  }
+    
+  private lazy val register = {
+    val method = classOf[AbstractSelector].getDeclaredMethod("register", classOf[AbstractSelectableChannel], classOf[Int], classOf[Object])
+    method.setAccessible(true)
+    method
+  }
+
+  // fixes issue observed where selector is initialized with a key set containing null
+  case class NullSafeSelector(underlying: Selector) extends AbstractSelector(underlying.provider) {
+
+    override protected def implCloseSelector() = {
+      ClientUdsSocketChannelFactory.implCloseSelector.invoke(underlying)
+    }
+
+    override protected def register(ch: AbstractSelectableChannel, ops: Int, att: Object) = {
+      ClientUdsSocketChannelFactory.register.invoke(underlying, ch, java.lang.Integer.valueOf(ops), att).asInstanceOf[SelectionKey]
+    }
+
+    override def keys() = {
+      val uks = underlying.keys
+      if (uks.isEmpty) uks else uks.asScala.filter(_ != null).asJava
+    }
+
+    override def selectedKeys() = underlying.selectedKeys
+
+    override def selectNow() = underlying.selectNow()
+
+    override def select(timeout: Long) = underlying.select(timeout)
+
+    override def select() = underlying.select
+
+    override def wakeup() = underlying.wakeup
+  }
+
+  def newUdsSelector: Selector =
+    NullSafeSelector(NativeSelectorProvider.getInstance().openSelector)
+}
 
 /** An NioClientSocketChannelFactory that reads and reads from SocketChannel backed by a unix domain socket */
 class ClientUdsSocketChannelFactory
@@ -43,14 +86,14 @@ class ClientUdsSocketChannelFactory
   private[this] lazy val workers: NioWorkerPool =
     new NioWorkerPool(workerExec, DefaultIOThreads) {
 
-      override protected def createWorker(executor: Executor): NioWorker =
+      override protected def newWorker(executor: Executor): NioWorker =
         new NioWorker(executor, null/*threadNameDeterminer*/) {
 
           private[this] val recvPool = new SocketReceiveBufferAllocator()
 
           // use a uds selector
-          selector = NativeSelectorProvider.getInstance().openSelector
-
+          selector = newUdsSelector
+          log.debug(s"selectors initial keys ${selector.keys}")
           override def run() {
             super.run()
             recvPool.releaseExternalResources()
@@ -83,6 +126,11 @@ class ClientUdsSocketChannelFactory
             log.debug("worker#rebuildSelector() - rebuilding selector")
             println("worker#rebuildSelector() - rebuilding selector")
             super.rebuildSelector()
+          }
+
+          override def select(sel: Selector) = {
+            log.debug(s"selecting from selector $sel ( keys ${sel.keys} )")
+            super.select(sel)
           }
 
           //https://github.com/netty/netty/blob/netty-3.9.5.Final/src/main/java/org/jboss/netty/channel/socket/nio/NioWorker.java#L49
@@ -158,11 +206,11 @@ class ClientUdsSocketChannelFactory
                         log.debug(s"worker: it's unix")
                         unix.chan.configureBlocking(false)
                         unix.chan.register(
-                          selector, chan.getRawInterestOps(), chan)
+                          selector, chan.getInterestOps(), chan)
                       case other =>
                         log.error(s"worker: it's not unix")
                         other.register(
-                          selector, chan.getRawInterestOps(), chan)
+                          selector, chan.getInterestOps(), chan)
                     }
                     
                     log.debug("worker: registered!")
@@ -195,9 +243,7 @@ class ClientUdsSocketChannelFactory
     class UdsBoss extends AbstractNioSelector(bossExec, null) with Boss { boss =>
 
       // use uds channel selector
-      selector = jnr.enxio.channels.NativeSelectorProvider.getInstance().openSelector
-
-     // @volatile private var timeoutTimer: Option[Timeout] = None
+      selector = newUdsSelector
 
       private[this] val wakeupTask = new TimerTask() {
         def run(timeout: Timeout) {
@@ -263,6 +309,11 @@ class ClientUdsSocketChannelFactory
         }
       }
 
+      override def select(sel: Selector) = {
+        log.debug(s"selecting from selector $sel (keys ${sel.keys})")
+        super.select(sel)
+      }
+
       override protected def process(selector: Selector) {
         log.debug(s"boss#process($selector)")
         val selected = selector.selectedKeys
@@ -303,7 +354,11 @@ class ClientUdsSocketChannelFactory
 
       private def processSelectedKeys(selectedKeys: JSet[SelectionKey]) =
         if (!selectedKeys.isEmpty) { // avoid garbage -> https://github.com/netty/netty/issues/597
-          for (key <- selectedKeys.asScala) {
+          // https://github.com/netty/netty/blob/netty-3.9.5.Final/src/main/java/org/jboss/netty/channel/socket/nio/NioClientBoss.java#L94
+          val it = selectedKeys.iterator()
+          while (it.hasNext) {
+            val key = it.next()
+            it.remove()
             if (!key.isValid) {
               log.debug("boss#processSelectedKeys() connection close")
               close(key)
