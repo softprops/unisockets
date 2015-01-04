@@ -255,13 +255,11 @@ class ClientUdsSocketChannelFactory
           log.debug(s"boss#createRegisterTask() registering channel $chan")
           val channel = chan.asInstanceOf[NioSocketChannel]
           val timeout = channel.getConfig().getConnectTimeoutMillis()
-          if (timeout > 0) {
-            if (!channel.isConnected()) {
-              log.debug(s"boss#createRegisterTask() should schedule wake up task")
-              /*channel.timeoutTimer = Some(*/timer.newTimeout(
-                wakeupTask,
-                timeout, TimeUnit.MILLISECONDS)
-            }
+          if (timeout > 0 && !channel.isConnected()) {
+            log.debug(s"boss#createRegisterTask() should schedule wake up task")
+            /*channel.timeoutTimer = Some(*/timer.newTimeout(
+              wakeupTask,
+              timeout, TimeUnit.MILLISECONDS)
           }
           // https://github.com/netty/netty/blob/netty-3.9.5.Final/src/main/java/org/jboss/netty/channel/socket/nio/NioClientBoss.java#L190-L191
           try channel.channel match {

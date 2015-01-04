@@ -9,10 +9,11 @@
 
 ## usage
 
-_note_: This library requires at a minimum a java 7 jre. as the SocketChannel class changed to implement a new [NetworkChannel](http://docs.oracle.com/javase/7/docs/api/java/nio/channels/NetworkChannel.html) interface in java 7.
+_note_: This library requires at a minimum a java 7 jre, as the [SocketChannel](http://docs.oracle.com/javase/7/docs/api/java/nio/channels/SocketChannel.html) class changed to implement a new [NetworkChannel](http://docs.oracle.com/javase/7/docs/api/java/nio/channels/NetworkChannel.html) interface in java 7.
 
-A unix domain socket is typically a reference to a file descriptor. unisockets defines an implementation of a `SocketAddress` for
-these file descriptors called `Addr`.
+A unix domain socket is means of interprocess communication via data streamed through a local file descriptor.
+
+unisockets, like tcp sockets, need to be addressable. unisockets defines an implementation of a `SocketAddress` for these file descriptors called an `Addr`.
 
 ```scala
 import java.io.File
@@ -25,13 +26,13 @@ You can create both instances of nio SocketChannels
 val channel = unisockets.SocketChannel.open(addr)
 ```
 
-and old io Sockets
+and old io Sockets with these Addrs
 
 ```scala
 val socket = unisockets.Socket.open(addr)
 ```
 
-You can also create disconnected instances of each calling `open` without arguments and calling `connect(addr)` at a deferred time.
+You can also create disconnected instances of each calling `open` without arguments and calling `connect(addr)` at a deferred time. This library aims to stay close to familiar factory methods defined in their [std lib counterparts](http://docs.oracle.com/javase/7/docs/api/java/nio/channels/SocketChannel.html#open())
 
 ### netty
 
