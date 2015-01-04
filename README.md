@@ -8,6 +8,12 @@
 
 ## install
 
+Add the following to your ivy resolver chain
+
+```scala
+resolvers += "softprops-maven" at "http://dl.bintray.com/content/softprops/maven"
+```
+
 ### core
 
 Adding the following to your sbt build definition.
