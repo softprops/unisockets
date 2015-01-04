@@ -11,9 +11,9 @@
 
 _note_: This library requires at a minimum a java 7 jre, as the [SocketChannel](http://docs.oracle.com/javase/7/docs/api/java/nio/channels/SocketChannel.html) class changed to implement a new [NetworkChannel](http://docs.oracle.com/javase/7/docs/api/java/nio/channels/NetworkChannel.html) interface in java 7.
 
-A unix domain socket facilitates interprocess communication between different processes on a host machine via data streamed through a local file descriptor.
+A Unix domain socket facilitates inter-process communication between different processes on a host machine via data streamed through a local file descriptor.
 
-unisockets, like tcp sockets, need to be addressable. unisockets defines an implementation of a `SocketAddress` for these file descriptors called an `Addr`.
+Unisockets, like tcp sockets, need to be addressable. unisockets defines an implementation of a `SocketAddress` for these file descriptors called an `Addr`.
 
 ```scala
 import java.io.File
@@ -38,7 +38,7 @@ You can also create disconnected instances of each calling `open` without argume
 
 ### netty
 
-The `unisockets-netty` module provides a netty `NioSocketChannel` backed by a `unisockets.SocketChannel`, enabling you to
+The `unisockets-netty` module provides a [Netty](http://netty.io/) `NioSocketChannel` backed by a `unisockets.SocketChannel`, enabling you to
 build netty clients for UNIX domain socket servers.
 
 ```scala 
@@ -52,6 +52,6 @@ It's constructor takes an optional Executor for accepting connections, an option
 Client's using this interface should make sure they call `ClientUdsSocketChannelFactory#releaseExternalResources` to release any resources 
 acquired during request processing.
 
-note: the netty interface has only been tested with a netty client pipeline with version `3.9.6.Final` newer versions ( netty 4+ ) are not supported yet but support is planned to be added in the future.
+note: The Netty interface has only been tested with a Netty client pipeline with version `3.9.6.Final` newer versions ( Netty 4+ ) are not supported yet but support is planned to be added in the future.
 
 Doug Tangren (softprops) 2014-2015
