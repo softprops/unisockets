@@ -13,7 +13,3 @@ pomExtra in ThisBuild := (
     </developer>
     </developers>
     <url>https://github.com/softprops/{name.value}</url>)
-
-bintraySettings
-
-bintray.Keys.packageLabels in bintray.Keys.bintray := Seq("domain-sockets", "unix", "sockets", "netty", "nio")
