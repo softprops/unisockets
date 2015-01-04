@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1"  xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+	 width="512px" height="512px" viewBox="0 0 512 512" style="enable-background:new 0 0 512 512;" xml:space="preserve">
+  <defs>
+    <linearGradient id="grad1" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:rgb(255,255,0);stop-opacity:1" />
+      <stop offset="100%" style="stop-color:rgb(255,0,0);stop-opacity:1" />
+    </linearGradient>
+  </defs>
+<g fill="#00BCD4">
+	<g id="eyes" fill="#B2EBF2">
+		<path id="le" d="M219.977,236.052h-26.8c-3.665,0-6.647,2.982-6.647,6.647v26.602c0,3.666,2.982,6.647,6.647,6.647h26.8
+			c3.666,0,6.647-2.982,6.647-6.647v-26.602C226.624,239.034,223.642,236.052,219.977,236.052z"/>
+		<path id="re" d="M318.823,236.052h-26.8c-3.666,0-6.647,2.982-6.647,6.647v26.602c0,3.666,2.982,6.647,6.647,6.647h26.8
+			c3.665,0,6.647-2.982,6.647-6.647v-26.602C325.47,239.034,322.488,236.052,318.823,236.052z"/>
+	</g>
+	<path d="M418.723,74.481H93.277c-11.046,0-20,8.954-20,20v323.037c0,11.045,8.954,20,20,20h325.445c11.046,0,20-8.955,20-20V94.481
+		C438.723,83.436,429.769,74.481,418.723,74.481z M256,360.937c-57.955,0-104.937-46.981-104.937-104.937
+		S198.045,151.063,256,151.063S360.937,198.045,360.937,256S313.955,360.937,256,360.937z"/>
+</g>
+<animate
+    id="tint"
+    xlink:href="#eyes"
+    attributeName="fill"
+    from="#B2EBF2"
+    to="#00BCD4"
+    dur="1s"
+    begin=".2s"
+    fill="freeze"/>
+<animate
+    id="close"
+    xlink:href="#eyes"
+    attributeName="opacity"
+    to="0"
+    dur=".02s"
+    begin="tint.end + 5s; open.end + 7s"
+    fill="freeze"/>
+<animate 
+    id="open"
+    xlink:href="#eyes"
+    attributeName="opacity"
+    to="1.0" 
+    dur="0.01s"
+    begin="close.end + 0.2s"
+    fill="freeze"/>
+
+</svg>

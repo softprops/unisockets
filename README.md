@@ -2,6 +2,11 @@
 
 dressing up [unix domain sockets](http://en.wikipedia.org/wiki/Unix_domain_socket) in a tcp [socket](http://docs.oracle.com/javase/7/docs/api/java/nio/channels/SocketChannel.html) shirt and tie.
 
+<p align="center">
+  <img height="200" src="us.svg"/>
+</p>
+
+
 ## usage
 
 _note_: This library requires at a minimum a java 7 jre. as the SocketChannel class changed to implement a new [NetworkChannel](http://docs.oracle.com/javase/7/docs/api/java/nio/channels/NetworkChannel.html) interface in java 7.
