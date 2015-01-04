@@ -93,21 +93,10 @@ class ClientUdsSocketChannelFactory
 
           // use a uds selector
           selector = newUdsSelector
-          log.debug(s"selectors initial keys ${selector.keys}")
+
           override def run() {
             super.run()
             recvPool.releaseExternalResources()
-          }
-
-          override def shutdown() {
-            log.debug("worker#shutdown()")
-            super.shutdown()
-          }
-
-          // https://github.com/netty/netty/blob/netty-3.9.5.Final/src/main/java/org/jboss/netty/channel/socket/nio/AbstractNioWorker.java#L347
-          override def close(channel: AbstractNioChannel[_], future: ChannelFuture) {
-            log.debug(s"worker#close($channel,$future)")
-            super.close(channel, future)
           }
 
           override def close(k: SelectionKey) = Option(k).foreach { // options because selector.keys was observed to contain a null (pdi)
@@ -125,11 +114,6 @@ class ClientUdsSocketChannelFactory
           override def rebuildSelector() {
             log.debug("worker#rebuildSelector() - rebuilding selector")
             super.rebuildSelector()
-          }
-
-          override def select(sel: Selector) = {
-            log.debug(s"selecting from selector $sel ( keys ${sel.keys} )")
-            super.select(sel)
           }
 
           //https://github.com/netty/netty/blob/netty-3.9.5.Final/src/main/java/org/jboss/netty/channel/socket/nio/NioWorker.java#L49
@@ -304,11 +288,6 @@ class ClientUdsSocketChannelFactory
             }
           }
         }
-      }
-
-      override def select(sel: Selector) = {
-        log.debug(s"selecting from selector $sel (keys ${sel.keys})")
-        super.select(sel)
       }
 
       override protected def process(selector: Selector) {
