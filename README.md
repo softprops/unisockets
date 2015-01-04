@@ -6,6 +6,23 @@
   <img height="175" src="https://rawgit.com/softprops/unisockets/master/us.svg"/>
 </p>
 
+## install
+
+### core
+
+Adding the following to your sbt build definition.
+
+```scala
+libraryDependencies += "me.lessis" %% "unisockets-core" % "0.1.0"
+```
+
+### netty
+
+Adding the following to your sbt build definition
+
+```scala
+libraryDependencies += "me.lessis" %% "unisockets-netty" % "0.1.0"
+```
 
 ## usage
 
@@ -20,7 +37,7 @@ import java.io.File
 val addr = unisockets.Addr(new File("/var/run/unix.sock"))
 ```
 
-You can get the path of the file an `Addr` referrs to by invoking `Addr#getHostName`.
+You can get the path of the file an `Addr` refers to by invoking `Addr#getHostName`.
 
 With an `Addr`, you can create instances of both nio SocketChannels
 
