@@ -16,7 +16,7 @@ resolvers += "softprops-maven" at "http://dl.bintray.com/content/softprops/maven
 
 ### core
 
-Adding the following to your sbt build definition.
+Add the following to your sbt build definition to add core interfaces to your classpath.
 
 ```scala
 libraryDependencies += "me.lessis" %% "unisockets-core" % "0.1.0"
@@ -24,7 +24,7 @@ libraryDependencies += "me.lessis" %% "unisockets-core" % "0.1.0"
 
 ### netty
 
-Adding the following to your sbt build definition
+Add the following to your sbt build definition to add netty3 bindings to your classpath.
 
 ```scala
 libraryDependencies += "me.lessis" %% "unisockets-netty" % "0.1.0"
